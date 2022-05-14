@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:async/async.dart';
-import 'package:flutter/foundation.dart';
+//import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:image_picker/image_picker.dart';
@@ -19,6 +19,10 @@ import 'image_source_sheet.dart';
 /// you need to implement [displayCustomType]
 class FormBuilderImagePicker extends FormBuilderField<List<dynamic>> {
   //TODO: Add documentation
+
+  /// bug fix added by Joc on 14.5.2022 to prevent form scrolling
+  final bool shouldRequestFocus;
+
   final double previewWidth;
   final double previewHeight;
   final EdgeInsets? previewMargin;
@@ -62,41 +66,42 @@ class FormBuilderImagePicker extends FormBuilderField<List<dynamic>> {
   /// fit for each image
   final BoxFit fit;
 
-  FormBuilderImagePicker({
-    Key? key,
-    //From Super
-    required String name,
-    FormFieldValidator<List<dynamic>>? validator,
-    List<dynamic>? initialValue,
-    InputDecoration decoration = const InputDecoration(),
-    ValueChanged<List<dynamic>?>? onChanged,
-    ValueTransformer<List<dynamic>?>? valueTransformer,
-    bool enabled = true,
-    FormFieldSetter<List<dynamic>>? onSaved,
-    AutovalidateMode autovalidateMode = AutovalidateMode.disabled,
-    VoidCallback? onReset,
-    FocusNode? focusNode,
-    WidgetBuilder? loadingWidget,
-    this.fit = BoxFit.cover,
-    this.preventPop = false,
-    this.displayCustomType,
-    this.previewWidth = 130,
-    this.previewHeight = 130,
-    this.previewMargin,
-    this.iconColor,
-    this.maxHeight,
-    this.maxWidth,
-    this.imageQuality,
-    this.preferredCameraDevice = CameraDevice.rear,
-    this.onImage,
-    this.maxImages,
-    this.cameraIcon = const Icon(Icons.camera_enhance),
-    this.galleryIcon = const Icon(Icons.image),
-    this.cameraLabel = const Text('Camera'),
-    this.galleryLabel = const Text('Gallery'),
-    this.bottomSheetPadding = EdgeInsets.zero,
-    this.placeholderImage,
-  })  : assert(maxImages == null || maxImages >= 0),
+  FormBuilderImagePicker(
+      {Key? key,
+      //From Super
+      required String name,
+      FormFieldValidator<List<dynamic>>? validator,
+      List<dynamic>? initialValue,
+      InputDecoration decoration = const InputDecoration(),
+      ValueChanged<List<dynamic>?>? onChanged,
+      ValueTransformer<List<dynamic>?>? valueTransformer,
+      bool enabled = true,
+      FormFieldSetter<List<dynamic>>? onSaved,
+      AutovalidateMode autovalidateMode = AutovalidateMode.disabled,
+      VoidCallback? onReset,
+      FocusNode? focusNode,
+      WidgetBuilder? loadingWidget,
+      this.fit = BoxFit.cover,
+      this.preventPop = false,
+      this.displayCustomType,
+      this.previewWidth = 130,
+      this.previewHeight = 130,
+      this.previewMargin,
+      this.iconColor,
+      this.maxHeight,
+      this.maxWidth,
+      this.imageQuality,
+      this.preferredCameraDevice = CameraDevice.rear,
+      this.onImage,
+      this.maxImages,
+      this.cameraIcon = const Icon(Icons.camera_enhance),
+      this.galleryIcon = const Icon(Icons.image),
+      this.cameraLabel = const Text('Camera'),
+      this.galleryLabel = const Text('Gallery'),
+      this.bottomSheetPadding = EdgeInsets.zero,
+      this.placeholderImage,
+      this.shouldRequestFocus = false})
+      : assert(maxImages == null || maxImages >= 0),
         super(
           key: key,
           initialValue: initialValue,
@@ -172,7 +177,9 @@ class FormBuilderImagePicker extends FormBuilderField<List<dynamic>> {
                           if (state.enabled)
                             InkWell(
                               onTap: () {
-                                state.requestFocus();
+                                if (shouldRequestFocus) {
+                                  state.requestFocus();
+                                }
                                 field.didChange(
                                   value.toList()..removeAt(index),
                                 );
@@ -209,18 +216,13 @@ class FormBuilderImagePicker extends FormBuilderField<List<dynamic>> {
                                 height: previewHeight,
                                 child: Icon(
                                   Icons.camera_enhance,
-                                  color: state.enabled
-                                      ? iconColor ?? primaryColor
-                                      : disabledColor,
+                                  color: state.enabled ? iconColor ?? primaryColor : disabledColor,
                                 ),
-                                color: (state.enabled
-                                        ? iconColor ?? primaryColor
-                                        : disabledColor)
+                                color: (state.enabled ? iconColor ?? primaryColor : disabledColor)
                                     .withAlpha(50)),
                         onTap: () async {
-                          final remainingImages = maxImages == null
-                              ? null
-                              : maxImages - value.length;
+                          final remainingImages =
+                              maxImages == null ? null : maxImages - value.length;
                           await showModalBottomSheet<void>(
                             context: state.context,
                             builder: (_) {
@@ -237,7 +239,9 @@ class FormBuilderImagePicker extends FormBuilderField<List<dynamic>> {
                                 galleryIcon: galleryIcon,
                                 galleryLabel: galleryLabel,
                                 onImageSelected: (image) {
-                                  state.requestFocus();
+                                  if(shouldRequestFocus){
+                                    state.requestFocus();
+                                  }
                                   field.didChange([...value, ...image]);
                                   Navigator.pop(state.context);
                                 },
@@ -276,8 +280,7 @@ class FormBuilderImagePicker extends FormBuilderField<List<dynamic>> {
 
 class _FormBuilderImagePickerState
     extends FormBuilderFieldState<FormBuilderImagePicker, List<dynamic>> {
-  List<dynamic> get effectiveValue =>
-      value?.where((element) => element != null).toList() ?? [];
+  List<dynamic> get effectiveValue => value?.where((element) => element != null).toList() ?? [];
 
   bool get hasMaxImages {
     final ev = effectiveValue;
