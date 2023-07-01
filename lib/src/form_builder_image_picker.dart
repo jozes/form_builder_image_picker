@@ -127,147 +127,155 @@ class FormBuilderImagePicker extends FormBuilderField<List<dynamic>> {
               decoration: state.decoration,
               child: SizedBox(
                 height: previewHeight,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: value.length + (canUpload ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (index < value.length) {
-                      final item = value[index];
-                      bool checkIfItemIsCustomType(dynamic e) => !(e is XFile ||
-                          e is String ||
-                          e is Uint8List ||
-                          e is ImageProvider ||
-                          e is Widget);
+                child: Expanded(
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: value.length + (canUpload ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index < value.length) {
+                        final item = value[index];
+                        bool checkIfItemIsCustomType(dynamic e) =>
+                            !(e is XFile ||
+                                e is String ||
+                                e is Uint8List ||
+                                e is ImageProvider ||
+                                e is Widget);
 
-                      final itemCustomType = checkIfItemIsCustomType(item);
-                      var displayItem = item;
-                      if (itemCustomType && displayCustomType != null) {
-                        displayItem = displayCustomType(item);
-                      }
-                      assert(
-                        !checkIfItemIsCustomType(displayItem),
-                        'Display item must be of type [Uint8List], [XFile], [String] (url), [ImageProvider] or [Widget]. '
-                        'Consider using displayCustomType to handle the type: ${displayItem.runtimeType}',
-                      );
-                      return Stack(
-                        key: ObjectKey(item),
-                        alignment: Alignment.topRight,
-                        children: <Widget>[
-                          Container(
-                            width: previewWidth,
-                            height: previewHeight,
-                            margin: previewMargin,
-                            child: displayItem is Widget
-                                ? displayItem
-                                : displayItem is ImageProvider
-                                    ? Image(image: displayItem, fit: fit)
-                                    : displayItem is Uint8List
-                                        ? Image.memory(displayItem, fit: fit)
-                                        : displayItem is String
-                                            ? Image.network(
-                                                displayItem,
-                                                fit: fit,
-                                              )
-                                            : XFileImage(
-                                                file: displayItem,
-                                                fit: fit,
-                                                loadingWidget: loadingWidget,
-                                              ),
-                          ),
-                          if (state.enabled)
-                            InkWell(
-                              onTap: () {
-                                if (shouldRequestFocus) {
-                                  state.requestFocus();
-                                }
-                                field.didChange(
-                                  value.toList()..removeAt(index),
-                                );
-                              },
-                              child: Container(
-                                margin: const EdgeInsets.all(3),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.withOpacity(.7),
-                                  shape: BoxShape.circle,
-                                ),
-                                alignment: Alignment.center,
-                                height: 22,
-                                width: 22,
-                                child: const Icon(
-                                  Icons.close,
-                                  size: 18,
-                                  color: Colors.white,
-                                ),
-                              ),
+                        final itemCustomType = checkIfItemIsCustomType(item);
+                        var displayItem = item;
+                        if (itemCustomType && displayCustomType != null) {
+                          displayItem = displayCustomType(item);
+                        }
+                        assert(
+                          !checkIfItemIsCustomType(displayItem),
+                          'Display item must be of type [Uint8List], [XFile], [String] (url), [ImageProvider] or [Widget]. '
+                          'Consider using displayCustomType to handle the type: ${displayItem.runtimeType}',
+                        );
+                        return Stack(
+                          key: ObjectKey(item),
+                          alignment: Alignment.topRight,
+                          children: <Widget>[
+                            Container(
+                              width: previewWidth,
+                              height: previewHeight,
+                              margin: previewMargin,
+                              child: displayItem is Widget
+                                  ? displayItem
+                                  : displayItem is ImageProvider
+                                      ? Image(image: displayItem, fit: fit)
+                                      : displayItem is Uint8List
+                                          ? Image.memory(displayItem, fit: fit)
+                                          : displayItem is String
+                                              ? Image.network(
+                                                  displayItem,
+                                                  fit: fit,
+                                                )
+                                              : XFileImage(
+                                                  file: displayItem,
+                                                  fit: fit,
+                                                  loadingWidget: loadingWidget,
+                                                ),
                             ),
-                        ],
-                      );
-                    } else {
-                      return GestureDetector(
-                        key: UniqueKey(),
-                        child: placeholderImage != null
-                            ? Image(
-                                width: previewWidth,
-                                height: previewHeight,
-                                image: placeholderImage,
-                              )
-                            : Container(
-                                width: previewWidth,
-                                height: previewHeight,
-                                child: Icon(
-                                  Icons.camera_enhance,
-                                  color: state.enabled ? iconColor ?? primaryColor : disabledColor,
-                                ),
-                                color: (state.enabled ? iconColor ?? primaryColor : disabledColor)
-                                    .withAlpha(50)),
-                        onTap: () async {
-                          final remainingImages =
-                              maxImages == null ? null : maxImages - value.length;
-                          await showModalBottomSheet<void>(
-                            context: state.context,
-                            builder: (_) {
-                              return ImageSourceBottomSheet(
-                                maxHeight: maxHeight,
-                                maxWidth: maxWidth,
-                                preventPop: preventPop,
-                                remainingImages: remainingImages,
-                                imageQuality: imageQuality,
-                                preferredCameraDevice: preferredCameraDevice,
-                                bottomSheetPadding: bottomSheetPadding,
-                                cameraIcon: cameraIcon,
-                                cameraLabel: cameraLabel,
-                                galleryIcon: galleryIcon,
-                                galleryLabel: galleryLabel,
-                                onImageSelected: (image) {
-                                  if(shouldRequestFocus){
+                            if (state.enabled)
+                              InkWell(
+                                onTap: () {
+                                  if (shouldRequestFocus) {
                                     state.requestFocus();
                                   }
-                                  field.didChange([...value, ...image]);
-                                  Navigator.pop(state.context);
+                                  field.didChange(
+                                    value.toList()..removeAt(index),
+                                  );
                                 },
-                              );
-                            },
-                          );
-                          // if (remainingImages == 1) {
-                          // } else {
-                          //   final imagePicker = ImagePicker();
-                          //   final picked = await imagePicker.pickMultiImage(
-                          //     maxHeight: maxHeight,
-                          //     maxWidth: maxWidth,
-                          //     imageQuality: imageQuality,
-                          //   );
-                          //   if (picked != null) {
-                          //     state.requestFocus();
-                          //     final actualPicked = remainingImages == null
-                          //         ? picked
-                          //         : picked.take(remainingImages);
-                          //     field.didChange([...value, ...actualPicked]);
-                          //   }
-                          // }
-                        },
-                      );
-                    }
-                  },
+                                child: Container(
+                                  margin: const EdgeInsets.all(3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.withOpacity(.7),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  alignment: Alignment.center,
+                                  height: 22,
+                                  width: 22,
+                                  child: const Icon(
+                                    Icons.close,
+                                    size: 18,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      } else {
+                        return GestureDetector(
+                          key: UniqueKey(),
+                          child: placeholderImage != null
+                              ? Image(
+                                  width: previewWidth,
+                                  height: previewHeight,
+                                  image: placeholderImage,
+                                )
+                              : Container(
+                                  width: previewWidth,
+                                  height: previewHeight,
+                                  child: Icon(
+                                    Icons.camera_enhance,
+                                    color: state.enabled
+                                        ? iconColor ?? primaryColor
+                                        : disabledColor,
+                                  ),
+                                  color: (state.enabled
+                                          ? iconColor ?? primaryColor
+                                          : disabledColor)
+                                      .withAlpha(50)),
+                          onTap: () async {
+                            final remainingImages = maxImages == null
+                                ? null
+                                : maxImages - value.length;
+                            await showModalBottomSheet<void>(
+                              context: state.context,
+                              builder: (_) {
+                                return ImageSourceBottomSheet(
+                                  maxHeight: maxHeight,
+                                  maxWidth: maxWidth,
+                                  preventPop: preventPop,
+                                  remainingImages: remainingImages,
+                                  imageQuality: imageQuality,
+                                  preferredCameraDevice: preferredCameraDevice,
+                                  bottomSheetPadding: bottomSheetPadding,
+                                  cameraIcon: cameraIcon,
+                                  cameraLabel: cameraLabel,
+                                  galleryIcon: galleryIcon,
+                                  galleryLabel: galleryLabel,
+                                  onImageSelected: (image) {
+                                    if (shouldRequestFocus) {
+                                      state.requestFocus();
+                                    }
+                                    field.didChange([...value, ...image]);
+                                    Navigator.pop(state.context);
+                                  },
+                                );
+                              },
+                            );
+                            // if (remainingImages == 1) {
+                            // } else {
+                            //   final imagePicker = ImagePicker();
+                            //   final picked = await imagePicker.pickMultiImage(
+                            //     maxHeight: maxHeight,
+                            //     maxWidth: maxWidth,
+                            //     imageQuality: imageQuality,
+                            //   );
+                            //   if (picked != null) {
+                            //     state.requestFocus();
+                            //     final actualPicked = remainingImages == null
+                            //         ? picked
+                            //         : picked.take(remainingImages);
+                            //     field.didChange([...value, ...actualPicked]);
+                            //   }
+                            // }
+                          },
+                        );
+                      }
+                    },
+                  ),
                 ),
               ),
             );
@@ -280,7 +288,8 @@ class FormBuilderImagePicker extends FormBuilderField<List<dynamic>> {
 
 class _FormBuilderImagePickerState
     extends FormBuilderFieldState<FormBuilderImagePicker, List<dynamic>> {
-  List<dynamic> get effectiveValue => value?.where((element) => element != null).toList() ?? [];
+  List<dynamic> get effectiveValue =>
+      value?.where((element) => element != null).toList() ?? [];
 
   bool get hasMaxImages {
     final ev = effectiveValue;
